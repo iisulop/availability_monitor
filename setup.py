@@ -4,13 +4,17 @@ def get_version():
     with open("availability_monitor/__init__.py") as version_file:
         for line in version_file:
             if line.startswith("__version__ = "):
-                return line.split('=')[-1].strip()
+                return line.split('=')[-1].strip().strip('"')
 
 dependencies = [
     "requests>=2.23",
-    "pytest>=5.4",
     "kafka-python>=2.0",
-    "psycopg-binary>=2.8",
+    "psycopg2-binary>=2.8",
+]
+
+dev_dependencies = [
+    'pytest>=5.4',
+    'responses>=0.10',
 ]
 
 setuptools.setup(
@@ -18,7 +22,10 @@ setuptools.setup(
     version=get_version(),
     author="Iiro Sulopuisto",
     author_email="iisulop@gmail.com",
-    description="Minimal availability monitor producer",
+    description="Minimal availability monitor producers",
+    extras_require=dict(
+        dev=dev_dependencies
+    ),
     url="",
     install_requires=dependencies,
     )

@@ -2,31 +2,31 @@ from typing import List, Union
 
 from kafka import KafkaConsumer
 
-from consumer.listener.consumer.consumer import Consumer
+from listener.consumer import Consumer
 
 
 class Kafka:
     def __init__(
             self,
-            consumer: Consumer,
+            producer: Consumer,
             topic: str,
             bootstrap_servers: Union[List[str], str],
             client_id: str,
-            security_protocol: str,
-            ssl_certfile: str,
-            ssl_keyfile: str
+            security_protocol: str = None,
+            ssl_certfile: str = None,
+            ssl_keyfile: str = None
     ):
-        self._consumer = consumer
+        self._producer = producer
         self._connection = KafkaConsumer(
             topic,
             bootstrap_servers=bootstrap_servers,
             client_id=client_id,
-            security_protocol=str,
-            ssl_certfile=str,
-            ssl_keyfile=str,
+            # security_protocol=security_protocol,
+            # ssl_certfile=ssl_certfile,
+            # ssl_keyfile=ssl_keyfile,
             # Supports `value_deserializer`
         )
 
     def listen(self):
         for msg in self._connection:
-            self._consumer.handle(msg)
+            self._producer.handle(msg)

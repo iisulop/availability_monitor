@@ -1,11 +1,10 @@
 import datetime
-import json
 import re
 
 import requests
 
-from availability_monitor.monitor.producer.kafka import Kafka
-from availability_monitor.monitor.producer.producer import Producer
+from availability_monitor.monitor.producers.kafka import Kafka
+from availability_monitor.monitor.producer import Producer
 
 
 class Monitor:
@@ -30,7 +29,8 @@ class Monitor:
             message = dict(
                 url=self._url,
                 status_code=result.status_code,
-                timestamp=datetime.datetime.now(tz=datetime.timezone.utc)
+                response_time=datetime.datetime.now(tz=datetime.timezone.utc).isoformat(),
+                elapsed=result.elapsed.seconds + (result.elapsed.microseconds / (1000 * 1000)),
             )
             if 200 <= result.status_code < 300:
                 message["result"] = "ok"
@@ -38,11 +38,15 @@ class Monitor:
                 message["result"] = "error"
             if self._regex:
                 regex_result = re.search(self._regex, result.text)
-                message["found_match"] = {self._regex: regex_result is not None}
+                message["regex_matches"] = {self._regex: regex_result is not None}
         except ConnectionError:
-            result = "Failed to connect"
             message = dict(
+                url=self._url,
                 result="failure",
+                timestamp=datetime.datetime.now(tz=datetime.timezone.utc).isoformat()
             )
 
-        self._producer.send_result(json.dumps(message))
+        self._producer.send_result(message)
+
+    def flush_producer(self, timeout: float = None):
+        self._producer.flush()
