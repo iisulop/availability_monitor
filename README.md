@@ -1,5 +1,7 @@
-Prerequisites:
- * [pyenv](https://github.com/pyenv/pyenv)
- * [pyenv-virtualenv](https://github.com/pyenv/pyenv-virtualenv)
+Project containing:
+ * web page monitor reporting statuses to a handler
+ * handler sending the received statuses to a Kafka instance
+ * Kafka consumer receiving certain topic's messages and passing them to a handler
+ * handler pushing the messages to a Postgresql database
 
-HTTP URL Monitor -> Producer -> Kafka -> Consumer -> Postgresql
+ Root level `Makefile` will recursively call both projects' specific `Makefile`s. There are targets for `lint`, `test` and `sdist`.

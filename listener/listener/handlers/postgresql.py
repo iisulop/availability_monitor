@@ -5,11 +5,15 @@ from typing import Any, List
 import psycopg2
 from kafka.consumer.fetcher import ConsumerRecord
 
-from listener.consumer import Consumer
+from listener.handlers.handler import Handler
 
 
-class Postgresql(Consumer):
+class Postgresql(Handler):
+    """
+    Postgresql website availability producer.
+    """
     class SqlCommands:
+        # pylint: disable=missing-class-docstring,too-few-public-methods
         create_table_events = "CREATE TABLE IF NOT EXISTS events " \
                               "(id BIGSERIAL PRIMARY KEY, url VARCHAR(256), response_time TIMESTAMPTZ NOT NULL, " \
                               "result varchar(32) NOT NULL, status_code INT, elapsed FLOAT)"
@@ -23,22 +27,33 @@ class Postgresql(Consumer):
 
     def __init__(self, host: str, port: int, user: str, password: str, dbname: str):
         """
+        Initialize Postgresql instance.
 
-        :param host:
-        :param port:
-        :param user:
-        :param password:
+        :param host: Host address of the Postgresql instance
+        :param port: Port number of the Postgresql instance
+        :param user: Username to use when connecting to Postgres
+        :param password: Password to use when connecting to Postgres
         :param dbname: Name of the database to use. Must exist before initializing any `Postgresql` objects
         """
-        self._connection = self.connect(host, port, user, password, dbname)
+        self._connection = self._connect(host, port, user, password, dbname)
         self._create_tables()
 
     @staticmethod
     def init_params() -> List[str]:
-        return ['host', 'port', 'user', 'password', 'dbname']
+        """
+        Get the parameters required by Postgresql `__init__`.
+        :return: List of required parameters
+        """
+        return [
+            "host",
+            "port",
+            "user",
+            "password",
+            "dbname"
+        ]
 
-
-    def connect(self, host: str, port: int, user: str, password: str, dbname: str) -> Any:
+    @staticmethod
+    def _connect(host: str, port: int, user: str, password: str, dbname: str) -> Any:
         return psycopg2.connect(host=host, port=port, user=user, password=password, dbname=dbname)
 
     def _cur(self):
@@ -50,14 +65,19 @@ class Postgresql(Consumer):
             cursor.execute(self.SqlCommands.create_table_regex_results)
             self._connection.commit()
 
-    def _deserialize(self, msg: str) -> dict:
+    @staticmethod
+    def _deserialize(msg: str) -> dict:
         deserialized = json.loads(msg)
         deserialized['response_time'] = datetime.datetime.fromisoformat(deserialized['response_time'])
         return deserialized
 
     def handle(self, msg: ConsumerRecord):
+        """
+        Forward information in the given message to Postgresql
+
+        :param msg: The message from Kafka
+        """
         msg = self._deserialize(msg.value.decode("utf-8"))
-        # insert into events
         with self._cur() as cursor:
             print(f"Adding event {msg}")
             cursor.execute(
@@ -66,12 +86,11 @@ class Postgresql(Consumer):
                     url=msg["url"],
                     response_time=msg["response_time"],
                     result=msg["result"],
-                    elapsed=msg["elapsed"],
+                    elapsed=msg.get("elapsed"),
                     status_code=msg.get("status_code"),
                 )
             )
             event_id = cursor.fetchone()[0]
-            # insert into regex_results if applicableproducer_class_name
             print("Adding regexes")
             for regex, matched in msg.get('regex_matches', dict()).items():
                 cursor.execute(
@@ -79,4 +98,4 @@ class Postgresql(Consumer):
                     dict(event_id=event_id, regex=regex, found=matched)
                 )
             self._connection.commit()
-            # Data types should be shared between the producers and producers
+            # Data types should be shared between the handlers and handlers

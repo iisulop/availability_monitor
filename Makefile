@@ -1,8 +1,17 @@
+.PHONY: activate-env create-env lint test
 
-activate-env:
-	@echo Run "pyenv activate availability_monitor"
+lint:
+	cd monitor && make $@
+	cd listener && make $@
 
-create-env:
-	pyenv install 3.7.4
-	pyenv virtualenv 3.7.4 availability_monitor
+test:
+	cd monitor && make $@
+	cd listener && make $@
 
+install:
+	cd monitor && make $@
+	cd listener && make $@
+
+sdist:
+	cd monitor && make $@
+	cd listener && make $@
