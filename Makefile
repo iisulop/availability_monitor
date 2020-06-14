@@ -1,4 +1,4 @@
-.PHONY: activate-env create-env lint test
+.PHONY: lint test install sdist
 
 lint:
 	cd monitor && make $@

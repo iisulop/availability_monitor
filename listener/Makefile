@@ -1,4 +1,4 @@
-.PHONY: bdist lint test
+.PHONY: lint test install sdist
 
 lint:
 	flake8
